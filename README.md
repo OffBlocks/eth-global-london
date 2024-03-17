@@ -1,1 +1,5 @@
 # eth-global-london
+
+The solution is a combination of on-chain and off-chain components. At the user side I forked an open-sourced Daimo wallet and added a few features there. Merchant is dealing with the off-chain API where they can initiate payments. A payment link is passed to the user via deep-link, the user authorises the payment (which really just approves token spend) and then the API picks up the process by submitting an on-chain transaction via CCIP to transfer funds from wallet's chain (Base Sepolia) to the settlement chain (Sepolia). Once transfer is completed, USDC is swapped to EURe via Uniswap and moved to a wallet assigned to a merchant where money is redeemed as EUR via Monerium.
+
+This repository contains the code for the off-chain API and the smart contracts for the on-chain part. The forked Daimo wallet is a separate repository: https://github.com/OffBlocks/daimo/tree/master.

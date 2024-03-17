@@ -1,0 +1,310 @@
+openapi: 3.1.0
+info:
+  title: OffBlocks Pay API
+  version: 0.0.1
+servers:
+  - url: https://api.pay.offblocks.xyz/v1
+tags:
+  - name: Payments
+  - name: Accounts
+paths:
+  /accounts:
+    get:
+      tags:
+        - Accounts
+      summary: Retrieve accounts
+      description: Retrieves accounts' details
+      operationId: getAccounts
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid request
+        '500':
+          description: Internal error
+    post:
+      tags:
+        - Accounts
+      summary: Create new account
+      description: Creates new account
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - identifier
+                - identifierType
+                - walletId
+              properties:
+                name:
+                  type: string
+                  description: Account name
+                identifier:
+                  type: string
+                  description: Account identifier
+                identifierType:
+                  $ref: '#/components/schemas/AccountIdentifierType'
+                walletId:
+                  $ref: '#/components/schemas/WalletId'
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid request
+        '500':
+          description: Internal error
+  /accounts/{accountId}:
+    get:
+      tags:
+        - Accounts
+      summary: Retrieve account
+      description: Retrieves account's details
+      operationId: getAccount
+      parameters:
+        - name: accountId
+          in: path
+          description: ID of account to be retrieved
+          required: true
+          schema:
+            $ref: '#/components/schemas/AccountId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid request
+        '404':
+          description: Account not found
+        '500':
+          description: Internal error
+  /payments:
+    post:
+      tags:
+        - Payments
+      summary: Initiate payment
+      description: Initiates payment
+      operationId: initiatePayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - currency
+                - destination
+              properties:
+                amount:
+                  description: Amount to be transferred
+                  $ref: '#/components/schemas/Decimal'
+                currency:
+                  type: string
+                  description: Payment currency (ISO-4217)
+                  examples: ["EUR"]
+                destination:
+                  description: Destination account ID
+                  $ref: '#/components/schemas/AccountId'
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Invalid request
+        '404':
+          description: Account not found
+        '500':
+          description: Internal error
+  /payments/{paymentId}:
+    get:
+      tags:
+        - Payments
+      summary: Retrieve payment
+      description: Retrieves payment details
+      operationId: getPayment
+      parameters:
+        - name: paymentId
+          in: path
+          description: ID of payment to be retrieved
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Invalid request
+        '404':
+          description: Payment not found
+        '500':
+          description: Internal error
+  /payments/{paymentId}/submit:
+    patch:
+      tags:
+        - Payments
+      summary: Submit payment
+      description: Submits payment
+      operationId: submitPayment
+      parameters:
+        - name: paymentId
+          in: path
+          description: ID of payment to be submitted
+          required: true
+          schema:
+            $ref: '#/components/schemas/PaymentId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - payerWalletId
+                - usdAmount
+              properties:
+                payerWalletId:
+                  description: Wallet ID of the payer
+                  $ref: '#/components/schemas/WalletId'
+                usdAmount:
+                  description: Payment amount in USD
+                  $ref: '#/components/schemas/Decimal'
+      responses:
+        '202':
+          description: Successful operation
+        '400':
+          description: Invalid request
+        '404':
+          description: Payment not found
+        '500':
+          description: Internal error
+components:
+  schemas:
+    Account:
+      required:
+        - id
+        - name
+        - identifier
+        - identifierType
+        - walletId
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/AccountId'
+        name:
+          type: string
+          description: Account name
+        identifier:
+          type: string
+          description: Account identifier
+        identifierType:
+          $ref: '#/components/schemas/AccountIdentifierType'
+        walletId:
+          $ref: '#/components/schemas/WalletId'
+        createdAt:
+          $ref: '#/components/schemas/DateTime'
+          description: Date this account was created (ISO-8601)
+        updatedAt:
+          $ref: '#/components/schemas/DateTime'
+          description: Date this account was updated (ISO-8601)
+    AccountId:
+      description: Unique account ID
+      $ref: '#/components/schemas/UUID'
+    AccountIdentifierType:
+      type: string
+      description: Type of the account identifier
+      enum:
+        - iban
+
+    Payment:
+      required:
+        - id
+        - amount
+        - currency
+        - usdAmount
+        - destination
+        - destinationName
+        - gatewayWalletId
+        - createdAt
+        - updatedAt
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/PaymentId'
+        amount:
+          description: Payment amount expressed as a decimal number
+          $ref: '#/components/schemas/Decimal'
+        currency:
+          type: string
+          description: Payment currency (ISO-4217)
+          examples: ["EUR"]
+        destination:
+          $ref: '#/components/schemas/AccountId'
+        destinationName:
+          type: string
+          description: Destination account name
+        gatewayWalletId:
+          $ref: '#/components/schemas/WalletId'
+        usdAmount:
+          description: Payment amount in USD expressed as a decimal number
+          $ref: '#/components/schemas/Decimal'
+        createdAt:
+          $ref: '#/components/schemas/DateTime'
+          description: Date this payment was created (ISO-8601)
+        updatedAt:
+          $ref: '#/components/schemas/DateTime'
+          description: Date this payment was updated (ISO-8601)
+    PaymentId:
+      description: Unique payment ID
+      $ref: '#/components/schemas/UUID'
+
+    WalletId:
+      description: Blockchain wallet identifier (0x for Ethereum)
+      type: string
+      examples: ["0xab16a96D359eC26a11e2C2b3d8f8B8942d5Bfcdb"]
+
+    UUID:
+      type: string
+      format: uuid
+      x-go-type: types.UUID
+      x-go-type-import:
+        path: github.com/offblocks/offblocks-common/types
+
+    Decimal:
+      type: string
+      format: decimal
+      x-go-type: types.Decimal
+      x-go-type-import:
+        path: github.com/offblocks/offblocks-common/types
+      description: Decimal number
+      examples: ["10.0"]
+
+    DateTime:
+      type: string
+      format: date-time
+      x-go-type: types.Time
+      x-go-type-import:
+        path: github.com/offblocks/offblocks-common/types
+      description: ISO-8601 timestamp
